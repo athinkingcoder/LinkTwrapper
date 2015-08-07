@@ -1,5 +1,6 @@
 ﻿namespace ThinkingCoder.LinkTwrapper.TestConsole
 {
+    using global::LinkTwrapper.Domain;
     using System;
     using System.Collections.Generic;
     using System.Configuration;
@@ -43,10 +44,10 @@
 
         private static string GetTwitterBearerToken()
         {
-            string encodedBearerTokenCredential = GetEncodedBearerTokenCredential();
+            var bearerTokenCredential = GetBearerTokenCredential();
 
             HttpClient client = new HttpClient();
-            string authorizationHeaderValue = string.Format("Basic {0}", encodedBearerTokenCredential);
+            string authorizationHeaderValue = string.Format("Basic {0}", bearerTokenCredential.EncodedValue);
             client.DefaultRequestHeaders.Clear();
             client.DefaultRequestHeaders.Add("Authorization", authorizationHeaderValue);
 
@@ -73,16 +74,9 @@
             return tokenResponse.access_token;
         }
 
-        private static string GetEncodedBearerTokenCredential()
+        private static BearerTokenCredential GetBearerTokenCredential()
         {
-            // should RFC 1738 the key and secret individually before concatenating 
-            string bearerTokenCredential = string.Format("{0}:{1}", ConsumerKey, ConsumerSecret);
-
-            byte[] bytes = System.Text.Encoding.UTF8.GetBytes(bearerTokenCredential);
-
-            string encodedBearerTokenCredential = Convert.ToBase64String(bytes);
-
-            return encodedBearerTokenCredential;
+            return new BearerTokenCredential(ConsumerKey, ConsumerSecret);
         }
 
         private static string GetTweets(string bearerTokenValue, string screenName)
