@@ -4,7 +4,6 @@
     using Newtonsoft.Json;
     using System;
     using System.Collections.Generic;
-    using System.Configuration;
     using System.Net.Http;
     using System.Threading.Tasks;
 
@@ -28,7 +27,7 @@
 
         public static void Main(string[] args)
         {
-            string token = GetTwitterBearerToken();
+            BearerToken token = GetTwitterBearerToken();
 
             Console.WriteLine(token);
 
@@ -56,47 +55,16 @@
             Console.ReadLine();
         }
 
-        private static string GetTwitterBearerToken()
+        private static BearerToken GetTwitterBearerToken()
         {
-            var bearerTokenCredential = GetBearerTokenCredential();
-
-            HttpClient client = new HttpClient();
-            string authorizationHeaderValue = string.Format("Basic {0}", bearerTokenCredential.EncodedValue);
-            client.DefaultRequestHeaders.Clear();
-            client.DefaultRequestHeaders.Add("Authorization", authorizationHeaderValue);
-
-            HttpContent payload = new FormUrlEncodedContent(new[] 
-            {
-                new KeyValuePair<string, string>("grant_type", "client_credentials")
-            });
-            payload.Headers.Clear();
-            payload.Headers.Add("Content-Type", "application/x-www-form-urlencoded;charset=UTF-8");
-
-            BearerTokenRepsonse tokenResponse = null;
-            string tokenUri = "https://api.twitter.com/oauth2/token";
-            var responseTask = client.PostAsync(tokenUri, payload).ContinueWith(
-                (completedTask) =>
-                {
-                    var response = completedTask.Result;
-                    var json = response.Content.ReadAsAsync<BearerTokenRepsonse>();
-                    json.Wait();
-                    tokenResponse = json.Result;
-                });
-
-            responseTask.Wait();
-
-            return tokenResponse.access_token;
+            var credential = new BearerTokenCredential(ConsumerKey, ConsumerSecret);
+            return new BearerToken(credential);
         }
 
-        private static BearerTokenCredential GetBearerTokenCredential()
-        {
-            return new BearerTokenCredential(ConsumerKey, ConsumerSecret);
-        }
-
-        private static async Task<List<Tweet>> GetTweets(string bearerTokenValue, string screenName)
+        private static async Task<List<Tweet>> GetTweets(BearerToken bearerToken, string screenName)
         {
             HttpClient client = new HttpClient();
-            string authorizationHeaderValue = string.Format("Bearer {0}", bearerTokenValue);
+            string authorizationHeaderValue = string.Format("Bearer {0}", bearerToken.Value);
             client.DefaultRequestHeaders.Clear();
             client.DefaultRequestHeaders.Add("Authorization", authorizationHeaderValue);
 
@@ -110,13 +78,6 @@
             //return response.Content.ReadAsAsync<List<Tweet>>().Result;
             return tweets;
         }
-    }
-
-    class BearerTokenRepsonse
-    {
-        public string token_type { get; set; }
-
-        public string access_token { get; set; }
     }
 }
 
