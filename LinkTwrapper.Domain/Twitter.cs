@@ -1,9 +1,8 @@
 ﻿namespace LinkTwrapper.Domain
 {
-    using System;
+    using Newtonsoft.Json;
     using System.Collections.Generic;
     using System.Net.Http;
-    using Newtonsoft.Json;
 
     public class Twitter
     {
@@ -39,17 +38,8 @@
 
             request.Content = payload;
 
-            BearerTokenRepsonse tokenResponse = null;
-            var responseTask = this.httpClient.SendAsync(request).ContinueWith(
-                (completedTask) =>
-                {
-                    var response = completedTask.Result;
-                    var json = response.Content.ReadAsAsync<BearerTokenRepsonse>();
-                    json.Wait();
-                    tokenResponse = json.Result;
-                });
-
-            responseTask.Wait();
+            var response = this.httpClient.SendAsync(request).Result;
+            var tokenResponse = response.Content.ReadAsAsync<BearerTokenRepsonse>().Result;
 
             return new BearerToken(tokenResponse.access_token);
         }
@@ -62,7 +52,6 @@
             HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, tweetsUri);
             request.Headers.Add("Authorization", authorizationHeaderValue);
             
-
             var response = this.httpClient.SendAsync(request).Result;
             var json = response.Content.ReadAsStringAsync().Result;
             var tweets = JsonConvert.DeserializeObject<List<Tweet>>(json);
