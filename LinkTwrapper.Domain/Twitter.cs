@@ -2,6 +2,7 @@
 {
     using System.Collections.Generic;
     using System.Net.Http;
+    using Newtonsoft.Json;
 
     public class Twitter
     {
@@ -33,6 +34,24 @@
             responseTask.Wait();
 
             return new BearerToken(tokenResponse.access_token);
+        }
+
+        public List<Tweet> GetTweets(IBearerToken bearerToken, string screenName)
+        {
+            HttpClient client = new HttpClient();
+            string authorizationHeaderValue = string.Format("Bearer {0}", bearerToken.Value);
+            client.DefaultRequestHeaders.Clear();
+            client.DefaultRequestHeaders.Add("Authorization", authorizationHeaderValue);
+
+            //string response = null;
+            string tweetsUri = string.Format("https://api.twitter.com/1.1/statuses/user_timeline.json?screen_name={0}&count=20", screenName);
+
+            var response = client.GetAsync(tweetsUri).Result;
+            var json = response.Content.ReadAsStringAsync().Result;
+            var tweets = JsonConvert.DeserializeObject<List<Tweet>>(json);
+
+            //return response.Content.ReadAsAsync<List<Tweet>>().Result;
+            return tweets;
         }
 
         public interface IBearerToken
