@@ -3,34 +3,12 @@
     using System.Collections.Generic;
     using System.Net.Http;
 
-    public class BearerToken
+    public class Twitter
     {
-        private readonly BearerTokenCredential credential;
-
-        private string value;
-
-        public BearerToken(BearerTokenCredential credential)
-        {
-            this.credential = credential;
-        }
-
-        public string Value
-        {
-            get
-            {
-                if (this.value == null)
-                {
-                    this.value = GetValueFromTwitter();
-                }
-
-                return this.value;
-            }
-        }
-
-        private string GetValueFromTwitter()
+        public IBearerToken RequestBearerToken(BearerTokenCredential credential)
         {
             HttpClient client = new HttpClient();
-            string authorizationHeaderValue = string.Format("Basic {0}", this.credential.EncodedValue);
+            string authorizationHeaderValue = string.Format("Basic {0}", credential.EncodedValue);
             client.DefaultRequestHeaders.Clear();
             client.DefaultRequestHeaders.Add("Authorization", authorizationHeaderValue);
 
@@ -54,7 +32,25 @@
 
             responseTask.Wait();
 
-            return tokenResponse.access_token;
+            return new BearerToken(tokenResponse.access_token);
+        }
+
+        public interface IBearerToken
+        {
+            string Value { get; }
+        }
+
+        private class BearerToken : IBearerToken
+        {
+            public BearerToken(string value)
+            {
+                this.Value = value;
+            }
+
+            public string Value
+            {
+                get;
+            }
         }
 
         private class BearerTokenRepsonse

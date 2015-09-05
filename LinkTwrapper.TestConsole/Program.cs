@@ -27,7 +27,7 @@
 
         public static void Main(string[] args)
         {
-            BearerToken token = GetTwitterBearerToken();
+            Twitter.IBearerToken token = GetTwitterBearerToken();
 
             Console.WriteLine(token);
 
@@ -55,13 +55,13 @@
             Console.ReadLine();
         }
 
-        private static BearerToken GetTwitterBearerToken()
+        private static Twitter.IBearerToken GetTwitterBearerToken()
         {
             var credential = new BearerTokenCredential(ConsumerKey, ConsumerSecret);
-            return new BearerToken(credential);
+            return new Twitter().RequestBearerToken(credential);
         }
 
-        private static async Task<List<Tweet>> GetTweets(BearerToken bearerToken, string screenName)
+        private static async Task<List<Tweet>> GetTweets(Twitter.IBearerToken bearerToken, string screenName)
         {
             HttpClient client = new HttpClient();
             string authorizationHeaderValue = string.Format("Bearer {0}", bearerToken.Value);
