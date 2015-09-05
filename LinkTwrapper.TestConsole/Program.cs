@@ -1,6 +1,7 @@
 ﻿namespace ThinkingCoder.LinkTwrapper.TestConsole
 {
     using global::LinkTwrapper.Domain;
+    using Newtonsoft.Json;
     using System;
     using System.Collections.Generic;
     using System.Configuration;
@@ -31,13 +32,26 @@
 
             Console.WriteLine(token);
 
-            string tweets = GetTweets(token, "JohnRentoul");
+            var tweets = GetTweets(token, "JohnRentoul").Result;
 
             Console.WriteLine();
             Console.WriteLine("--------");
             Console.WriteLine();
 
-            Console.WriteLine(tweets);
+           // Console.WriteLine(tweets);
+
+            foreach (var tweet in tweets)
+            {
+               // Console.WriteLine(tweet.id + ": " + tweet.text);
+
+                if (tweet.ContainsLinks)
+                {
+                    foreach (var link in tweet.Links)
+                    {
+                        Console.WriteLine(link.AbsoluteUri);
+                    }
+                }
+            }
 
             Console.ReadLine();
         }
@@ -79,27 +93,22 @@
             return new BearerTokenCredential(ConsumerKey, ConsumerSecret);
         }
 
-        private static string GetTweets(string bearerTokenValue, string screenName)
+        private static async Task<List<Tweet>> GetTweets(string bearerTokenValue, string screenName)
         {
             HttpClient client = new HttpClient();
             string authorizationHeaderValue = string.Format("Bearer {0}", bearerTokenValue);
             client.DefaultRequestHeaders.Clear();
             client.DefaultRequestHeaders.Add("Authorization", authorizationHeaderValue);
 
-            string response = null;
-            string tweetsUri = string.Format("https://api.twitter.com/1.1/statuses/user_timeline.json?screen_name={0}", screenName);
-            var responseTask = client.GetAsync(tweetsUri).ContinueWith(
-                (completedTask) =>
-                {
-                    var result = completedTask.Result;
-                    var content = result.Content.ReadAsStringAsync();
-                    content.Wait();
-                    response = content.Result;
-                });
+            //string response = null;
+            string tweetsUri = string.Format("https://api.twitter.com/1.1/statuses/user_timeline.json?screen_name={0}&count=20", screenName);
 
-            responseTask.Wait();
+            var response = await client.GetAsync(tweetsUri);
+            var json = response.Content.ReadAsStringAsync().Result;
+            var tweets = JsonConvert.DeserializeObject<List<Tweet>>(json);
 
-            return response;
+            //return response.Content.ReadAsAsync<List<Tweet>>().Result;
+            return tweets;
         }
     }
 
