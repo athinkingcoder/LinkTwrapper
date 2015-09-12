@@ -1,43 +1,41 @@
 ﻿namespace LinkTwrapper.Domain
 {
+    using Newtonsoft.Json;
     using System.Collections.Generic;
     using System.Net.Http;
 
     public class Twitter
     {
-        public IBearerToken RequestBearerToken(BearerTokenCredential credential)
+        private readonly HttpClient httpClient;
+
+        public Twitter()
+        {
+            this.httpClient = CreateHttpClient();
+        }
+
+        private HttpClient CreateHttpClient()
         {
             HttpClient client = new HttpClient();
-            string authorizationHeaderValue = string.Format("Basic {0}", credential.EncodedValue);
             client.DefaultRequestHeaders.Clear();
-            client.DefaultRequestHeaders.Add("Authorization", authorizationHeaderValue);
 
-            HttpContent payload = new FormUrlEncodedContent(new[]
-            {
-                new KeyValuePair<string, string>("grant_type", "client_credentials")
-            });
-            payload.Headers.Clear();
-            payload.Headers.Add("Content-Type", "application/x-www-form-urlencoded;charset=UTF-8");
+            return client;
+        }
 
-            BearerTokenRepsonse tokenResponse = null;
-            string tokenUri = "https://api.twitter.com/oauth2/token";
-            var responseTask = client.PostAsync(tokenUri, payload).ContinueWith(
-                (completedTask) =>
-                {
-                    var response = completedTask.Result;
-                    var json = response.Content.ReadAsAsync<BearerTokenRepsonse>();
-                    json.Wait();
-                    tokenResponse = json.Result;
-                });
-
-            responseTask.Wait();
+        public IBearerToken RequestBearerToken(BearerTokenRequest request)
+        {
+            var response = this.httpClient.SendAsync(request.HttpRequest).Result;
+            var tokenResponse = response.Content.ReadAsAsync<BearerTokenRepsonse>().Result;
 
             return new BearerToken(tokenResponse.access_token);
         }
 
-        public interface IBearerToken
+        public List<Tweet> GetTweets(TweetRequest request)
         {
-            string Value { get; }
+            var response = this.httpClient.SendAsync(request.HttpRequest).Result;
+            var json = response.Content.ReadAsStringAsync().Result;
+            var tweets = JsonConvert.DeserializeObject<List<Tweet>>(json);
+
+            return tweets;
         }
 
         private class BearerToken : IBearerToken
