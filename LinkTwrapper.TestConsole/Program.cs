@@ -23,14 +23,21 @@
 
         public static void Main(string[] args)
         {
+            Uri tokenUri = new Uri("https://api.twitter.com/oauth2/token");
+            Uri userTimelineUri = new Uri("https://api.twitter.com/1.1/statuses/user_timeline.json");
+
             var twitter = new Twitter();
 
             var credential = new BearerTokenCredential(ConsumerKey, ConsumerSecret);
-            Twitter.IBearerToken token= twitter.RequestBearerToken(credential);
+            var tokenRequest = new BearerTokenRequest(credential, tokenUri);
+
+            IBearerToken token= twitter.RequestBearerToken(tokenRequest);
 
             Console.WriteLine(token);
 
-            var tweets = twitter.GetTweets(token, "JohnRentoul");
+            var tweetsRequest = new TweetRequest(token, userTimelineUri, "JohnRentoul");
+
+            var tweets = twitter.GetTweets(tweetsRequest);
 
             Console.WriteLine();
             Console.WriteLine("--------");

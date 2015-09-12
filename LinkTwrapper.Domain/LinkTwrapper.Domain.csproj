@@ -65,6 +65,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BearerTokenRequest.cs" />
+    <Compile Include="IBearerToken.cs" />
+    <Compile Include="TweetRequest.cs" />
     <Compile Include="Twitter.cs" />
     <Compile Include="BearerTokenCredential.cs" />
     <Compile Include="TweetEntities.cs" />
