@@ -2,6 +2,11 @@
 {
     using global::LinkTwrapper.Domain;
     using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.ServiceModel.Syndication;
+    using System.Text;
+    using System.Xml;
 
     public class Program
     {
@@ -35,7 +40,8 @@
 
             Console.WriteLine(token);
 
-            var tweetsRequest = new TweetRequest(token, userTimelineUri, "JohnRentoul");
+            string screenName = "JohnRentoul";
+            var tweetsRequest = new TweetRequest(token, userTimelineUri, screenName);
 
             var tweets = twitter.GetTweets(tweetsRequest);
 
@@ -43,18 +49,40 @@
             Console.WriteLine("--------");
             Console.WriteLine();
 
-           // Console.WriteLine(tweets);
-
+            List<SyndicationItem> items = new List<SyndicationItem>();
+            int counter = 0;
             foreach (var tweet in tweets)
             {
-               // Console.WriteLine(tweet.id + ": " + tweet.text);
-
                 if (tweet.ContainsLinks)
                 {
+                    counter++;
                     foreach (var link in tweet.Links)
                     {
                         Console.WriteLine(link.AbsoluteUri);
                     }
+
+                    StringBuilder content = new StringBuilder();
+                    content.AppendLine(tweet.text);
+                    foreach(var link in tweet.Links)
+                    {
+                        string linkTag = string.Format(@"<a href='{0}'>{0}</>", link.AbsoluteUri);
+                        content.AppendLine(linkTag);
+                    }
+                    SyndicationItem item = new SyndicationItem(screenName + counter, content.ToString(), new Uri("http://localhost"));
+                    items.Add(item);
+                }
+            }
+
+            var syndicationFeed = new SyndicationFeed("LinkTwrapper", "Tweets containing links", new Uri("http://localhost"))
+                { Items = items };
+            string timestamp = DateTime.Now.ToString("yyyy-MM-dd_hhmmssfff");
+            string filePath = string.Format(@"C:\WS\LinkTwrapper\RSSFiles\Tweets{0}.rss", timestamp);
+            using (var fileStream = File.Create(filePath))
+            {
+                using (var xmlWriter = XmlWriter.Create(fileStream))
+                {
+                    syndicationFeed.SaveAsRss20(xmlWriter);
+                    xmlWriter.Flush();
                 }
             }
 
